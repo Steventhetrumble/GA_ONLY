@@ -236,7 +236,7 @@ if __name__ == "__main__":
                     break
             triala,trialb = crossover(D,multiplications,pop2[i],pop2[a])
             triala = mutate(D,multiplications,triala,15)#int(best_cost*100)
-            triallb = mutate(D,multiplications,trialb,15)#int(best_cost*100)
+            trialb = mutate(D,multiplications,trialb,15)#int(best_cost*100)
             vala = decode(D,multiplications,triala)
             valb = decode(D,multiplications,trialb)
             costa, tempxa = determine_fitness(vala)
@@ -271,7 +271,7 @@ if __name__ == "__main__":
         #history.append([count, best_cost])
         # increase generation count
         count += 1
-        if count%100 == 0:
+        if count%2 == 0:
             temp_val = best_value
             temp_cost = best_cost
             best_value, bestx, best_cost = local_search(best_value,bestx,best_cost)

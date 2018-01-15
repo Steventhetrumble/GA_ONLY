@@ -1,26 +1,17 @@
-import numpy as np
-from create_options import *
-from Item import *
+from strassen_pure_GA.analogous.create_options import *
+from strassen_pure_GA.analogous.create_options import *
+
 
 def evaluate(x_array):
-    analog = x_array
-    digital= [0]*len(x_array)
-    matrix = []
-    for i in range(0,len(x_array),1):
-        if (x_array[i] <= 0):
-            digital[i]=0
-        elif (x_array[i] >= 255):
-            digital[i] = 255
-        else:
-            digital[i] = int(round(analog[i]))
-    pos1 , pos2 = create_list2(2,2)
-
-    for i in range(0,len(digital)):
-        matrix.append(pos1[digital[i]])
-    val = np.array(matrix[0])
-    for i in range(1, len(digital), 1):
-        val = np.concatenate((val, matrix[i]), axis=1)
+    matrix = [[0]*7]*16
+    a = 7
+    b = 16
+    for i in range(0,b):
+        for j in range(0,a):
+            matrix[i][j] = int(round(x_array[i*7 + j]))
+    val = np.array(matrix)
     fitness = determine_fitness(val)
+    print fitness
     return fitness
 
 def determine_fitness(value):

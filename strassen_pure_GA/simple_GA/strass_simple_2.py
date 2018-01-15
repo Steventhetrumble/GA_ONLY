@@ -5,15 +5,16 @@ def create_Chromosome(D,mult):
     one = 0b100
     zero = 0b010
     neg_one = 0b001
-    rows = D**4
+    # is not rows now- is in the form [a1 a2 a3 a4] [ b1 b2 b3 b4 ]
+    rows = D**3
     cols = mult
     chromosome = 0b0
     for i in xrange(rows*cols):
         choice = np.random.randint(0,34)
         chromosome = chromosome << 3
-        if choice < 12:
+        if choice < 5:
             chromosome= chromosome|one
-        elif choice < 23:
+        elif choice < 30:
             chromosome = chromosome | zero
         else:
             chromosome = chromosome | neg_one
@@ -64,9 +65,10 @@ def create_sols2():
 
 def decode(D,mult,bins):
     binary = bins
-    rows = D**4
+    rows = D**3
     cols = mult
     value = []
+    final_value= []
     for i in range(rows):
         temp = []
         for j in range(cols):
@@ -78,12 +80,26 @@ def decode(D,mult,bins):
                 temp.append(-1)
             binary = binary >> 3
         value.append(temp)
-    #print np.array(value)
+
     return np.array(value)
+
+def expand(D, mult, value):
+    rows = D ** 3
+    cols = mult
+    final_value=[]
+    for i in range(rows/2):
+        for z in range(rows/2,rows):
+            temp = []
+            for j in range(cols):
+                temp.append(value[i][j]*value[z][j])
+            final_value.append(temp)
+    return np.array(final_value)
+
+
 
 def encode(D,mult,value):
     val = value
-    rows = D**4
+    rows = D**3
     cols =  mult
     bins = 0b0
     for i in range(rows):
@@ -97,9 +113,11 @@ def encode(D,mult,value):
                 bins = bins | 0b001
     return bins
 
-def local_search(value,x, fitness):
+def local_search(D,value,final_value,x, fitness):
+    # TODO: randomize starting position of local search
     best_cost = fitness
     best_val = value
+    best_final_value = final_value
     best_x = x
     for i in range(0,len(value),1):
         for j in range(0, len(value[0]),1):
@@ -108,34 +126,43 @@ def local_search(value,x, fitness):
             if value[i][j] == 1:
                 val1[i][j] = 0
                 val2[i][j] = -1
-                cost1 , x1 = determine_fitness(val1)
-                cost2 , x2 = determine_fitness(val2)
+                final_val1 = expand(D,len(value[0]),val1)
+                final_val2 = expand(D,len(value[0]),val2)
+                cost1 , x1 = determine_fitness(final_val1)
+                cost2 , x2 = determine_fitness(final_val2)
             elif value[i][j] == 0:
                 val1[i][j] = 1
                 val2[i][j] = -1
-                cost1, x1 = determine_fitness(val1)
-                cost2, x2 = determine_fitness(val2)
+                final_val1 = expand(D, len(value[0]), val1)
+                final_val2 = expand(D, len(value[0]), val2)
+                cost1, x1 = determine_fitness(final_val1)
+                cost2, x2 = determine_fitness(final_val2)
             else:
                 val1[i][j] = 0
                 val2[i][j] = 1
-                cost1, x1 = determine_fitness(val1)
-                cost2, x2 = determine_fitness(val2)
+                final_val1 = expand(D, len(value[0]), val1)
+                final_val2 = expand(D, len(value[0]), val2)
+                cost1, x1 = determine_fitness(final_val1)
+                cost2, x2 = determine_fitness(final_val2)
             if cost1 > cost2:
                 winner_cost = cost1
                 winner_val = val1
+                winner_final_value = final_val1
                 winner_x = x1
             else:
                 winner_cost = cost2
                 winner_val = val2
+                winner_final_value = final_val2
                 winner_x = x2
             if winner_cost > best_cost:
                 best_cost = winner_cost
                 best_val= winner_val
+                best_final_value = winner_final_value
                 best_x = winner_x
 
-                return best_val,  best_x, best_cost
+                return best_val, best_final_value,  best_x, best_cost
 
-    return best_val, best_x, best_cost
+    return best_val, best_final_value, best_x, best_cost
 
 
 
@@ -143,7 +170,7 @@ def local_search(value,x, fitness):
 
 
 def crossover(D,mult,bina,binb):
-    rows = D**4
+    rows = D**3
     cols =  mult
     point = np.random.randint(0,rows*cols)
     maska = 0b0
@@ -163,7 +190,7 @@ def crossover(D,mult,bina,binb):
     return child1 , child2
 
 def mutate(D,mult,bin,rate):
-    rows = D**4
+    rows = D**3
     cols = mult
     binary =  bin
     compare = bin
@@ -172,8 +199,8 @@ def mutate(D,mult,bin,rate):
     one = 0b100
     zero = 0b010
     neg_one =0b001
-    mask_one = one << 3 * (mult * (D ** 4) - 1)
-    mask_zero = zero << 3 * (mult * (D ** 4) - 1)
+    mask_one = one << 3 * (mult * (D ** 3) - 1)
+    mask_zero = zero << 3 * (mult * (D ** 3) - 1)
     for i in range(rows*cols):
         choicea = np.random.randint(0,100)
         maska = maska << 3
@@ -213,12 +240,17 @@ if __name__ == "__main__":
     bestx = []
     history = []
     x= []
+    value = []
+    final_value=[]
     best_value = []
     #gen pop
     for i in xrange(num_of_pop):
         chromo = create_Chromosome(D,multiplications)
         val = decode(D,multiplications,chromo)
-        fitThis , tempx = determine_fitness(val)
+        final_val = expand(D,multiplications,val)
+        fitThis , tempx = determine_fitness(final_val)
+        value.append(val)
+        final_value.append(final_val)
         pop.append(chromo)
         cost.append(fitThis)
         x.append(tempx)
@@ -235,26 +267,32 @@ if __name__ == "__main__":
                 if a != i:
                     break
             triala,trialb = crossover(D,multiplications,pop2[i],pop2[a])
-            triala = mutate(D,multiplications,triala,15)#int(best_cost*100)
-            triallb = mutate(D,multiplications,trialb,15)#int(best_cost*100)
+            triala = mutate(D,multiplications,triala,np.random.randint(0,int(100*best_cost)+1))#int(best_cost*100)
+            trialb = mutate(D,multiplications,trialb,np.random.randint(0,int(100*best_cost)+1))#int(best_cost*100)
             vala = decode(D,multiplications,triala)
+            final_vala = expand(D,multiplications,vala)
             valb = decode(D,multiplications,trialb)
-            costa, tempxa = determine_fitness(vala)
-            costb, tempxb = determine_fitness(valb)
+            final_valb = expand(D,multiplications,valb)
+            costa, tempxa = determine_fitness(final_vala)
+            costb, tempxb = determine_fitness(final_valb)
             if costa > costb:
                 winner = triala
                 better_cost = costa
                 betterx = tempxa
                 better_val = vala
+                better_final_val = final_vala
             else:
                 winner = trialb
                 better_cost= costb
                 betterx = tempxb
                 better_val = valb
+                better_final_val = final_valb
             if better_cost > cost[i]:
                 pop2[i] = winner
                 cost[i] = better_cost
                 x[i] = betterx
+                value[i] = better_val
+                final_value[i] = better_final_val
         pop = np.copy(pop2)
 
         # update best cost
@@ -264,27 +302,34 @@ if __name__ == "__main__":
             bestx = x[i]
             bestpop = pop[i]
             # TODO: may want to store values in an array so no need to re decode
-            best_value = decode(D,multiplications,bestpop)
+            best_value = value[i]
+            final_best_value = final_value[i]
 
 
         # store the current best cost every generation
         #history.append([count, best_cost])
         # increase generation count
         count += 1
-        if count%100 == 0:
-            temp_val = best_value
-            temp_cost = best_cost
-            best_value, bestx, best_cost = local_search(best_value,bestx,best_cost)
-            # TODO: encode might be expensive, may want ot check if best_value has changed?
-            bestpop= encode(D, multiplications, best_value)
-            pop[best_i]= bestpop
-            cost[best_i]= best_cost
-            x[best_i] = bestx
-            print best_cost
-            #print bestx
-            #print best_value
-            #print bestpop
-    #print history'''
 
-
-
+        if count%50 == 0:
+            for s in range(0,5):
+                print best_value
+                print bestx
+                print best_cost
+                temp_val = best_value
+                temp_cost = best_cost
+                best_value, final_best_value, bestx, best_cost = local_search(D,best_value,final_best_value, bestx, best_cost)
+                # TODO: encode might be expensive, may want ot check if best_value has changed?
+                bestpop= encode(D, multiplications, best_value)
+                pop[best_i]= bestpop
+                cost[best_i]= best_cost
+                x[best_i] = bestx
+                value[best_i]= best_value
+                final_value[i]= final_best_value
+                if best_cost == 1:
+                    print best_value
+                    break
+                print best_cost
+                #print bestx
+                #print best_value
+                #print bestpop'''

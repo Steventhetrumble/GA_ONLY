@@ -1,8 +1,7 @@
-from analog2dig import *
 import numpy as np
-import matplotlib.pyplot as plt
-from math import floor
-from random import random
+
+from strassen_pure_GA.analogous.analog2dig import *
+
 
 class Particle:
     def __init__(self, D):

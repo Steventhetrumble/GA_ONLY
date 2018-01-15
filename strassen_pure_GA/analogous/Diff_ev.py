@@ -1,7 +1,6 @@
 import random
-import numpy as np
-from analog2dig import *
-import xlwt
+
+from strassen_pure_GA.analogous.analog2dig import *
 
 
 def Differential_evolution(NP, CR, F, D):

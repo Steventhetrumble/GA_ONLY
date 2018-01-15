@@ -4,8 +4,9 @@ import random
 #from create_list import *
 import sys
 import math
-
-def sort_matrix2(matrix):
+alpha = 1e-10
+def sort_matrix2(A,B):
+    matrix = np.concatenate((A,B),axis = 1)
     col_label_list = set(range(0,len(matrix[0])))
     rows_left = set(range(0,len(matrix)))
     new_row_list = []
@@ -21,6 +22,42 @@ def sort_matrix2(matrix):
 
     return np.array(new_row_list)
 
+def GaussianElimination(A, B):
+    MatrixA = np.copy(A)
+    MatrixB = np.copy(B)
+    n = len(MatrixA)
+    r = len(MatrixA[0])
+    m = len(MatrixB[0])
+    for k in range(0,r):
+        imax = find_max_pivot(MatrixA,k)
+        #if (abs(MatrixA[imax][k]< alpha)):
+        #    print "darn"
+        temp = MatrixA[k]
+        MatrixA[k] = MatrixA[imax]
+        MatrixA[imax] = temp
+        temp = MatrixB[k]
+        MatrixB[k] = MatrixB[imax]
+        MatrixB[imax] = temp
+        for i in range(k+1, n):
+            c = MatrixA[i][k]/MatrixA[k][k]
+            MatrixA[i][k] = 0
+            for j in range(k+1,r):
+                MatrixA[i][j] = MatrixA[i][j] - c*MatrixA[k][j]
+            for l in range(0,m):
+                MatrixB[i][l] = MatrixB[i][l] - c*MatrixB[k][l]
+    return  np.concatenate((np.array(MatrixA),np.array(MatrixB)),axis = 1)
+
+def find_max_pivot(matrixA, k):
+        n = len(matrixA)
+        imax = k
+        max_pivot = abs(matrixA[k][k]);
+
+        for i in range(k + 1, n):
+            a = abs(matrixA[i][k])
+            if (a > max_pivot):
+                max_pivot = a 
+                imax = i 
+        return imax
 
 
 class Chromosome():
@@ -38,17 +75,25 @@ class Chromosome():
         self.determine_fitness()
         self.stop = False
         self.encode = []
+        self.sorted = []
+        self.complete = []
         self.X = []
-        self.find_X()
+        self.choices = []
+        self.update_x()
+        self.prospect = False
+        
 
-    def back_sub(self,upper_triangle):
+
+
+    def back_sub(self,ut,choice = None):
+        upper_triangle =  np.copy(ut)
         for i in range(self.multiplications - 1, -1, -1):
             if upper_triangle[i][i] != 1:
                 upper_triangle[i][:] = upper_triangle[i][:] / upper_triangle[i][i]
             if any(upper_triangle[:][i]) != 0:
                 for j in range(0, i, 1):
                     upper_triangle[j] = upper_triangle[j] - upper_triangle[i] * upper_triangle[j][i]
-
+        self.complete = upper_triangle
         return upper_triangle[:self.multiplications, self.multiplications:]
 
     def encode_answer(self):
@@ -63,7 +108,10 @@ class Chromosome():
             val = np.concatenate((val, self.Chromosome[i].result), axis=1)
         self.value = val
         self.determine_fitness()
-        self.X
+
+    def update_x(self):
+        self.find_X()
+        self.check_X()
 
     def determine_fitness(self):
         #self.partition = np.concatenate((self.value, self.solution), axis=1)
@@ -83,28 +131,30 @@ class Chromosome():
             self.stop = True
 
     def find_X(self):
-        X = sort_matrix2(np.concatenate((self.value,self.solution),axis=1))
+        X = sort_matrix2(self.value[:],self.solution[:])
+        self.sorted = X
         X = self.back_sub(X)
-        #X = X[0:self.multiplications,self.multiplications:]
         self.X = X
 
     def check_X(self):
         search_index = []
         unique_items , unique_index = np.unique(self.X, return_index = True, axis = 0)
         for row in unique_index:
-            if self.X[row].any() != 0:
+            if self.X[row].any() != 0 and abs(self.X[row].any()) <= 1:
                 search_index.append(row)
-        if len(search_index)== self.multiplications:
-            print self.X      
-        return np.array(search_index)#,ind
+        
+        if len(search_index) == self.multiplications:
+            self.prospect = True
+        else:
+            self.prospect = False
+        
+        self.choices = np.array(search_index)#,ind
 
     def local_search(self):
-        #print X
-        index = self.check_X(self.X)
-        choice = np.random.choice(index)
+        choice = np.random.choice(np.arange(self.multiplications))
         old_fitness = self.fitness
         old_item = self.Chromosome[choice]
-        search_range = int((self.fitness)*len(self.options)) #int((self.fitness)*
+        search_range = 255 #int((self.fitness)*(self.fitness)*len(self.options)) #int((self.fitness)*
         upper_range = len(self.options) - search_range
         start = int(random.random()*upper_range)
         end = start + search_range
@@ -118,36 +168,43 @@ class Chromosome():
                     break
                 #break
         self.Chromosome[choice]= old_item
-        self.fitness = old_fitness
+        self.update_value()
+        self.update_x()
 
     def crossover_combine(self,chrome_b):#,chrome_c
-        index_a = self.check_X()
-        index_b =chrome_b.check_X()
+        index_a = self.choices
+        index_b =chrome_b.choices
         #index_c =chrome_c.check_X()
         trial = Chromosome(self.multiplications,self.options,self.solution)
         for i in range(0,self.multiplications,1):
             if i in index_a:
-                trial.Chromosome[i]= self.Chromosome[i]
+                trial.Chromosome[i] = self.Chromosome[i]
             elif i in index_b:
                 trial.Chromosome[i] = chrome_b.Chromosome[i]
-            #elif i in index_b:
-            #    trial.Chromosome[i] = chrome_c.Chromosome[i]
-        #print "********************************"
-        #print self.value
-        #print index_a
-        #print "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&"
-        #print chrome_b.value
-        #print index_b
-        #print "#########################################"
-        #print chrome_c.value
-        #print index_c 
-        #print "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
         trial.update_value()
-        #print trial.value
-        #print "**********************************"
         return trial   
 
-        
+    def directed_local_search(self):
+        bad_choice = set(np.arange(self.multiplications)) - set(self.choices)
+        choice = np.random.choice(list(bad_choice)) 
+        old_fitness = self.fitness
+        old_item = self.Chromosome[choice]
+        search_range = 255#int((self.fitness)*(self.fitness)*len(self.options)) #int((self.fitness)*
+        upper_range = len(self.options) - search_range
+        start = int(random.random()*upper_range)
+        end = start + search_range
+        for i in range(start,end,1):
+            self.Chromosome[choice] = self.options[i]
+            self.update_value()
+            if self.fitness >= old_fitness:
+                old_item = self.Chromosome[choice]
+                old_fitness = self.fitness
+                if self.stop == True:
+                    break
+                #break
+        self.Chromosome[choice]= old_item
+        self.update_value()
+        self.update_x()       
 
 
 if __name__ == "__main__":

@@ -5,22 +5,23 @@ from create_options import *
 def create_list2(matrix,density,mirror):
     options = find_options(matrix,mirror)
     total_size = 3**(matrix**2)
-
+    reduced_options=[]
     possibilities = []
-
-    for row in range(0, len(options), 1):
-        if np.count_nonzero(options[row])> density:
+    for op in range(0,len(options)):
+        if np.count_nonzero(options[op])> density:
             continue
-        for row2 in range(0, len(options), 1):
-            if np.count_nonzero(options[row2])> density:
-                continue
+        else:
+            reduced_options.append(options[op])
+
+    for row in range(0, len(reduced_options), 1):
+        for row2 in range(0, len(reduced_options), 1):
             temporary = []
             for col in range(0, len(options[0]), 1):
                 for col2 in range(0, len(options[0]), 1):
-                    temporary.append([options[row][col] * options[row2][col2]])
-            new_item = item(len(options),row,row2, np.array(temporary))
+                    temporary.append([reduced_options[row][col] * reduced_options[row2][col2]])
+            new_item = item(len(reduced_options),row,row2, np.array(temporary))
             possibilities.append(new_item)
-    return np.array(possibilities), np.array(options)
+    return np.array(possibilities), np.array(reduced_options)
 
 def create_sols2(twobytwo):
     if twobytwo:
