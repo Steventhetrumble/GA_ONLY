@@ -12,18 +12,38 @@ def create_Chromosome(D,mult):
     for i in xrange(rows*cols):
         choice = np.random.randint(0,34)
         chromosome = chromosome << 3
-        if choice < 5:
+        if choice < 6:
             chromosome= chromosome|one
-        elif choice < 30:
+        elif choice < 29:
             chromosome = chromosome | zero
         else:
             chromosome = chromosome | neg_one
     return chromosome
 
-
+def find_options(matrix_size, mirror):
+    options_size = matrix_size ** 2
+    options = []
+    if mirror:
+        for i in range(int((3 ** options_size))):
+            rows = []
+            for j in range(0, options_size):
+                rows.append(1 - int(i % 3 ** (options_size - j) / (3 ** (options_size - (j + 1)))))
+            number = np.count_nonzero(rows)
+            if number < 3 and number > 0:
+                options.append(rows)
+        return options
+    else:
+        for i in range(int((3 ** options_size) / 2)):
+            rows = []
+            for j in range(0, options_size):
+                rows.append(1 - int(i % 3 ** (options_size - j) / (3 ** (options_size - (j + 1)))))
+            number = np.count_nonzero(rows)
+            if number < 3 and number > 0:
+                options.append(rows)
+        return options
 
 def determine_fitness(value):
-    solution =create_sols2()
+    solution = create_sols2()
     a = np.dot(value, value.T)
     b = np.linalg.pinv(a)
     c = np.dot(value.T, b)
@@ -37,6 +57,38 @@ def determine_fitness(value):
     #if fitness == 1:
      #   stop = True
 
+def final_search(D,value,final_value,x, fitness):
+    best_cost = fitness
+    best_val = value
+    best_final_value = final_value
+    best_x = x
+    option = find_options(2,False)
+    print len(option)
+    count = 0
+    Column_choice = np.arange(len(value[0]))
+    np.random.shuffle(Column_choice)
+    for column in Column_choice:
+        print i
+        for j in range(0, len(option), 1):
+            for k in range(0,len(option),1):
+                val1 = np.copy(value)
+                option1 = option[j]
+                option2 = option[k]
+                options = np.concatenate((option1,option2), axis= 0)
+                val1[:,column]= options.T
+                final_val1 = expand(D, len(value[0]), val1)
+                cost1, x1 = determine_fitness(final_val1)
+                #print count
+                count += 1
+                if cost1 > best_cost:
+                    best_cost = cost1
+                    best_val = val1
+                    best_final_value = final_val
+                    best_x = x1
+
+                    return best_val, best_final_value, best_x, best_cost
+
+    return best_val, best_final_value, best_x, best_cost
 
 def create_sols2():
     C1 = np.array([[1], [0], [0], [0],
@@ -243,6 +295,7 @@ if __name__ == "__main__":
     value = []
     final_value=[]
     best_value = []
+    final_best_value = []
     #gen pop
     for i in xrange(num_of_pop):
         chromo = create_Chromosome(D,multiplications)
@@ -311,7 +364,7 @@ if __name__ == "__main__":
         # increase generation count
         count += 1
 
-        if count%50 == 0:
+        if (count %25 -10) == 0:
             for s in range(0,5):
                 print best_value
                 print bestx
@@ -330,6 +383,28 @@ if __name__ == "__main__":
                     print best_value
                     break
                 print best_cost
+
+        if count % 25 == 0:
+            print best_value
+            print bestx
+            print best_cost
+            temp_val = best_value
+            temp_cost = best_cost
+            best_value, final_best_value, bestx, best_cost = final_search(D, best_value, final_best_value, bestx,
+                                                                          best_cost)
+            # TODO: encode might be expensive, may want ot check if best_value has changed?
+            bestpop = encode(D, multiplications, best_value)
+            pop[best_i] = bestpop
+            cost[best_i] = best_cost
+            x[best_i] = bestx
+            value[best_i] = best_value
+            final_value[i] = final_best_value
+            if best_cost == 1:
+                print best_value
+                break
+            print best_cost
+
+
                 #print bestx
                 #print best_value
                 #print bestpop'''
