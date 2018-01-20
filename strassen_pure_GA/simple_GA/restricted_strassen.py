@@ -1,12 +1,12 @@
 import numpy as np
 
 
-def create_Chromosome(D,mult):
-    one = 0b100
-    zero = 0b010
-    neg_one = 0b001
+def create_Chromosome(D,mult,option):
+    length = len(option)
     # is not rows now- is in the form [a1 a2 a3 a4] [ b1 b2 b3 b4 ]
     rows = D**3
+
+
     cols = mult
     chromosome = 0b0
     for i in xrange(rows*cols):
