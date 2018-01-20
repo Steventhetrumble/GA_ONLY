@@ -1,23 +1,20 @@
 import numpy as np
+import math
 
 
-def create_Chromosome(D,mult,option):
-    length = len(option)
+def create_Chromosome(multiplication, option):
+    length = int(math.log(len(option),2)*2*multiplication)
     # is not rows now- is in the form [a1 a2 a3 a4] [ b1 b2 b3 b4 ]
-    rows = D**3
-
-
-    cols = mult
+    one = 0b1
+    zero = 0b0
     chromosome = 0b0
-    for i in xrange(rows*cols):
-        choice = np.random.randint(0,34)
-        chromosome = chromosome << 3
-        if choice < 6:
+    for i in xrange(length):
+        choice = np.random.randint(0,2)
+        chromosome = chromosome << 1
+        if choice < 1:
             chromosome= chromosome|one
-        elif choice < 29:
-            chromosome = chromosome | zero
         else:
-            chromosome = chromosome | neg_one
+            chromosome = chromosome | zero
     return chromosome
 
 def find_options(matrix_size, mirror):
@@ -115,24 +112,19 @@ def create_sols2():
     return final_sol
 
 
-def decode(D,mult,bins):
+def decode(D, mult, bins, options):
+    length = int(math.log(len(options), 2))
     binary = bins
-    rows = D**3
+    rows =  D**3
     cols = mult
-    value = []
-    final_value= []
-    for i in range(rows):
-        temp = []
-        for j in range(cols):
-            if binary&0b100 :
-                temp.append(1)
-            elif binary&0b010 :
-                temp.append(0)
-            else:
-                temp.append(-1)
-            binary = binary >> 3
-        value.append(temp)
-
+    value = np.zeros((rows, cols))
+    for i in range(mult):
+        option1 = (binary&(length-1))-1
+        binary = binary >> length
+        option2 = (binary& (length-1))-1
+        temp = np.concatenate((options[option1],options[option2]))
+        value[:, i] = temp.T
+        binary = binary >> length
     return np.array(value)
 
 def expand(D, mult, value):
@@ -222,6 +214,7 @@ def local_search(D,value,final_value,x, fitness):
 
 
 def crossover(D,mult,bina,binb):
+    # TODO: Convert to restricted search
     rows = D**3
     cols =  mult
     point = np.random.randint(0,rows*cols)
@@ -242,6 +235,7 @@ def crossover(D,mult,bina,binb):
     return child1 , child2
 
 def mutate(D,mult,bin,rate):
+    # TODO:  convert to restricted search
     rows = D**3
     cols = mult
     binary =  bin
@@ -296,10 +290,11 @@ if __name__ == "__main__":
     final_value=[]
     best_value = []
     final_best_value = []
+    optionz = find_options(2,False)
     #gen pop
     for i in xrange(num_of_pop):
-        chromo = create_Chromosome(D,multiplications)
-        val = decode(D,multiplications,chromo)
+        chromo = create_Chromosome(multiplications,optionz)
+        val = decode(D,multiplications,chromo,optionz)
         final_val = expand(D,multiplications,val)
         fitThis , tempx = determine_fitness(final_val)
         value.append(val)
@@ -322,9 +317,9 @@ if __name__ == "__main__":
             triala,trialb = crossover(D,multiplications,pop2[i],pop2[a])
             triala = mutate(D,multiplications,triala,np.random.randint(0,int(100*best_cost)+1))#int(best_cost*100)
             trialb = mutate(D,multiplications,trialb,np.random.randint(0,int(100*best_cost)+1))#int(best_cost*100)
-            vala = decode(D,multiplications,triala)
+            vala = decode(D,multiplications,triala,optionz)
             final_vala = expand(D,multiplications,vala)
-            valb = decode(D,multiplications,trialb)
+            valb = decode(D,multiplications,trialb,optionz)
             final_valb = expand(D,multiplications,valb)
             costa, tempxa = determine_fitness(final_vala)
             costb, tempxb = determine_fitness(final_valb)
