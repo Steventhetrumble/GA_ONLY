@@ -29,7 +29,7 @@ def find_options(matrix_size, mirror):
             for j in range(0, options_size):
                 rows.append(1 - int(i % 3 ** (options_size - j) / (3 ** (options_size - (j + 1)))))
             number = np.count_nonzero(rows)
-            if number < 3 and number > 0:
+            if number < 5 and number > 0:
                 options.append(rows)
         return options
     else:
@@ -38,7 +38,7 @@ def find_options(matrix_size, mirror):
             for j in range(0, options_size):
                 rows.append(1 - int(i % 3 ** (options_size - j) / (3 ** (options_size - (j + 1)))))
             number = np.count_nonzero(rows)
-            if number < 3 and number > 0:
+            if number < 5 and number > 0:
                 options.append(rows)
         return options
 
@@ -384,7 +384,7 @@ if __name__ == "__main__":
                     break
                 print best_cost
 
-        if count % 25 == 0:
+        if count % 10 == 0:
             print best_value
             print bestx
             print best_cost
@@ -402,7 +402,7 @@ if __name__ == "__main__":
             if best_cost == 1:
                 print best_value
                 break
-            print best_cost
+            print cost
 
 
                 #print bestx
