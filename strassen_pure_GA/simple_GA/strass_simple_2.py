@@ -63,12 +63,10 @@ def final_search(D,value,final_value,x, fitness):
     best_final_value = final_value
     best_x = x
     option = find_options(2,False)
-    print len(option)
     count = 0
     Column_choice = np.arange(len(value[0]))
     np.random.shuffle(Column_choice)
     for column in Column_choice:
-        print column
         for j in range(0, len(option), 1):
             for k in range(0,len(option),1):
                 val1 = np.copy(value)
@@ -282,7 +280,11 @@ def mutate(D,mult,bin,rate):
 
 
 if __name__ == "__main__":
-    num_of_pop=100
+    prev_best_i1 = 1000
+    prev_best_cost1 = 1000
+    prev_best_i2 = 1000
+    prev_best_cost2 = 1000
+    num_of_pop=2
     D = 2
     multiplications = 7
     mute_rate = 40
@@ -310,7 +312,7 @@ if __name__ == "__main__":
 
     gen_max = D*2000
     count = 0
-    while(count < gen_max):
+    while(True):
         pop2 = np.copy(pop)
         for i in xrange(num_of_pop):
             triala = 0b0
@@ -346,17 +348,18 @@ if __name__ == "__main__":
                 x[i] = betterx
                 value[i] = better_val
                 final_value[i] = better_final_val
+                # update best cost
+            if cost[i] > best_cost:
+                best_i = i
+                best_cost = cost[i]
+                bestx = x[i]
+                bestpop = pop[i]
+                # TODO: may want to store values in an array so no need to re decode
+                best_value = value[i]
+                final_best_value = final_value[i]
+
         pop = np.copy(pop2)
 
-        # update best cost
-        if cost[i] > best_cost:
-            best_i = i
-            best_cost = cost[i]
-            bestx = x[i]
-            bestpop = pop[i]
-            # TODO: may want to store values in an array so no need to re decode
-            best_value = value[i]
-            final_best_value = final_value[i]
 
 
         # store the current best cost every generation
@@ -364,11 +367,44 @@ if __name__ == "__main__":
         # increase generation count
         count += 1
 
-        if count < 0:
-            for s in range(0,5):
-                print best_value
-                print bestx
-                print best_cost
+        if count %10 == 0:
+            if (best_i == prev_best_i2) and (best_cost == prev_best_cost2):
+                pop[best_i] = create_Chromosome(D,multiplications)
+                bestpop = pop[best_i]
+                value[best_i]=decode(D,multiplications,bestpop)
+                final_value[best_i] = expand(D, multiplications, value[best_i])
+                cost[best_i], x[best_i] = determine_fitness(final_value[best_i])
+                best_cost = cost[best_i]
+                bestx = x[best_i]
+                # TODO: may want to store values in an array so no need to re decode
+                best_value = value[best_i]
+                final_best_value = final_value[best_i]
+
+
+                print "repeat"
+            elif(best_i == prev_best_i1) and (best_cost == prev_best_cost1):
+                prev_best_i1 = 1000
+                prev_best_cost1 = 1000
+                prev_best_i2 = best_i
+                prev_best_cost2 = best_cost
+                temp_val = best_value
+                temp_cost = best_cost
+                best_value, final_best_value, bestx, best_cost = final_search(D, best_value, final_best_value, bestx,
+                                                                              best_cost)
+                # TODO: encode might be expensive, may want ot check if best_value has changed?
+                bestpop = encode(D, multiplications, best_value)
+                pop[best_i] = bestpop
+                cost[best_i] = best_cost
+                x[best_i] = bestx
+                value[best_i] = best_value
+                final_value[i] = final_best_value
+                if best_cost == 1:
+                    print best_value
+                    break
+                print cost
+            else:
+                prev_best_i1 = best_i
+                prev_best_cost1 = best_cost
                 temp_val = best_value
                 temp_cost = best_cost
                 best_value, final_best_value, bestx, best_cost = local_search(D,best_value,final_best_value, bestx, best_cost)
@@ -383,27 +419,6 @@ if __name__ == "__main__":
                     print best_value
                     break
                 print best_cost
-
-        if count % 10 == 0:
-            print best_value
-            print bestx
-            print best_cost
-            temp_val = best_value
-            temp_cost = best_cost
-            best_value, final_best_value, bestx, best_cost = final_search(D, best_value, final_best_value, bestx,
-                                                                          best_cost)
-            # TODO: encode might be expensive, may want ot check if best_value has changed?
-            bestpop = encode(D, multiplications, best_value)
-            pop[best_i] = bestpop
-            cost[best_i] = best_cost
-            x[best_i] = bestx
-            value[best_i] = best_value
-            final_value[i] = final_best_value
-            if best_cost == 1:
-                print best_value
-                break
-            print cost
-
 
                 #print bestx
                 #print best_value
