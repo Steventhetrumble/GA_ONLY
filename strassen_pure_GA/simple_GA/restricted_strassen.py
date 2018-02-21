@@ -337,10 +337,10 @@ def mutate(D,mult,length_of_options,bin,rate):
 if __name__ == "__main__":
     prev_best_i = 1000
     prev_best_cost = 1000
-    num_of_pop=20
-    D = 3
-    multiplications = 19
-    mute_rate = 15
+    num_of_pop=2
+    D = 2
+    multiplications = 7
+    mute_rate = 40
     cost = []
     pop = []
     best_cost = 0
@@ -351,7 +351,7 @@ if __name__ == "__main__":
     final_value=[]
     best_value = []
     final_best_value = []
-    optionz = find_options(3,False,10,8)
+    optionz = find_options(2,False,3,0)
     solution = create_sols2(D)
     #gen pop
     for i in xrange(num_of_pop):
@@ -424,7 +424,7 @@ if __name__ == "__main__":
         count += 1
 
 
-        if count % 100 ==0:
+        if count % 10 ==0:
             if (best_i == prev_best_i) and (best_cost == prev_best_cost):
                 pop[best_i] = create_Chromosome(multiplications,optionz)
                 bestpop = pop[best_i]
