@@ -1,6 +1,7 @@
 import numpy as np
 from check_unique import check_and_write
-
+import time
+import csv
 
 def create_Chromosome(D,mult):
     one = 0b100
@@ -269,10 +270,10 @@ def mutate(D,mult,bin,rate):
 
 class strassen_search():
 
-    def __init__(self, num_of_pop, D, multiplications):
+    def __init__(self, num_of_pop, D, multiplications,mute_rate):
         self.solution = create_sols2()
         self.option = find_options(2, False)
-        self.purge_rate = int(num_of_pop/2)
+        self.purge_rate = int(num_of_pop/num_of_pop)
         self.filename = '2by2.h5'
         self.prev_best_i1 = 1000
         self.prev_best_cost1 = 1000
@@ -281,7 +282,7 @@ class strassen_search():
         self.num_of_pop = num_of_pop
         self.D = D
         self.multiplications = multiplications
-        self.mute_rate = 40
+        self.mute_rate = mute_rate
         self.cost = []
         self.pop = []
         self.best_cost = 0
@@ -420,7 +421,7 @@ class strassen_search():
             self.check_for_improvement()
 
     def check_for_improvement(self):
-        if self.count % 100 == 0:
+        if self.count % self.num_of_pop*self.num_of_pop*self.num_of_pop*self.num_of_pop == 0:
             if (self.best_i == self.prev_best_i2) and (self.best_cost == self.prev_best_cost2):
                 self.purge(self.purge_rate)
                 print "repeat"
@@ -447,8 +448,8 @@ class strassen_search():
                 if self.best_cost == 1:
                     print self.best_value
                     check_and_write(self.best_value.T,self.filename,self.multiplications)
-
-                    self.purge(1)
+                    self.running = 0
+                    #self.purge(1)
                 print self.cost
             else:
                 self.prev_best_i1 = self.best_i
@@ -470,7 +471,8 @@ class strassen_search():
                 if self.best_cost == 1:
                     print self.best_value
                     check_and_write(self.best_value.T,self.filename,self.multiplications)
-                    self.purge(1)
+                    self.running = 0
+                    #self.purge(1)
                 print self.best_cost
 
     def purge(self,purge_rate):
@@ -500,6 +502,18 @@ class strassen_search():
 
 
 if __name__ == "__main__":
+    while(True):
+        pop = 20 #np.random.randint(10, 21)
+        m =  15 #np.random.randint(35, 45)
+        start = time.time()
+        first = strassen_search(pop,2,7,m)
+        first.simple_search()
+        end =time.time()
+        total_time = end - start
+        results = "{},{},{} \n".format(total_time,pop,m)
+        print("the final running time is {}".format(end - start))
+        print("the parameters are {} and {}".format(pop, m))
+        fd = open('parameters.csv', 'a')
+        fd.write(results)
+        fd.close()
 
-    first = strassen_search(4,2,7)
-    first.simple_search()
