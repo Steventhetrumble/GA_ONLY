@@ -271,6 +271,9 @@ def mutate(D,mult,bin,rate):
 class strassen_search():
 
     def __init__(self, num_of_pop, D, multiplications,mute_rate):
+        self.improvement = [1]*num_of_pop
+        self.temp_cost_finder = [0]*num_of_pop
+        self.success =0
         self.solution = create_sols2()
         self.option = find_options(2, False)
         self.purge_rate = int(num_of_pop/num_of_pop)
@@ -361,7 +364,6 @@ class strassen_search():
             self.count += 1
             self.check_for_improvement()
 
-
     def tournament(self,pop,k):
         best = None
         for i in range(k):
@@ -371,7 +373,7 @@ class strassen_search():
         return best
 
     def simple_search(self):
-        while (self.running):
+        while (self.count <500 and self.running):
             pop2 = np.copy(self.pop)
             for i in xrange(self.num_of_pop):
                 triala = 0b0
@@ -416,6 +418,38 @@ class strassen_search():
                     self.best_value = self.value[i]
                     self.final_best_value = self.final_value[i]
 
+            for i in xrange(self.num_of_pop):
+                if (not self.improvement[i]) and self.temp_cost_finder[i] == self.cost[i]:
+                    pass
+                else:
+
+                    temp_cost = self.cost[i]
+
+                    self.value[i], self.final_value[i], self.x[i], self.cost[i] = local_search(self.D,
+                                                                                                      self.value[i],
+                                                                                                      self.final_value[i],
+                                                                                                      self.x[i],
+                                                                                                      self.cost[i],
+                                                                                                      self.solution)
+                    if temp_cost == self.cost[i]:
+                        self.improvement[i] = 0
+                        self.temp_cost_finder[i] = self.cost[i]
+                    else:
+                        self.improvement[i] = 1
+
+
+
+
+                    if self.cost[i] > self.best_cost:
+                        self.best_i = i
+                        self.best_cost = self.cost[i]
+                        self.bestx = self.x[i]
+                        self.bestpop = self.pop[i]
+                        self.best_value = self.value[i]
+                        self.final_best_value = self.final_value[i]
+
+
+
             self.pop = np.copy(pop2)
             self.count += 1
             self.check_for_improvement()
@@ -425,7 +459,10 @@ class strassen_search():
             if (self.best_i == self.prev_best_i2) and (self.best_cost == self.prev_best_cost2):
                 self.purge(self.purge_rate)
                 print "repeat"
+                print self.count
             elif (self.best_i == self.prev_best_i1) and (self.best_cost == self.prev_best_cost1):
+                #self.running = 0
+                #     self.success = 1
                 self.prev_best_i1 = 1000
                 self.prev_best_cost1 = 1000
                 self.prev_best_i2 = self.best_i
@@ -449,7 +486,8 @@ class strassen_search():
                     print self.best_value
                     check_and_write(self.best_value.T,self.filename,self.multiplications)
                     self.running = 0
-                    #self.purge(1)
+                    self.success = 1
+                #     #self.purge(1)
                 print self.cost
             else:
                 self.prev_best_i1 = self.best_i
@@ -472,8 +510,10 @@ class strassen_search():
                     print self.best_value
                     check_and_write(self.best_value.T,self.filename,self.multiplications)
                     self.running = 0
+                    self.success = 1
                     #self.purge(1)
                 print self.best_cost
+
 
     def purge(self,purge_rate):
         self.pop[self.best_i] = create_Chromosome(self.D, self.multiplications)
@@ -503,17 +543,21 @@ class strassen_search():
 
 if __name__ == "__main__":
     while(True):
-        pop = 20 #np.random.randint(10, 21)
-        m =  15 #np.random.randint(35, 45)
+        pop = 40 #np.random.randint(10, 21)
+        m =  14 #np.random.randint(35, 45)
         start = time.time()
         first = strassen_search(pop,2,7,m)
         first.simple_search()
         end =time.time()
         total_time = end - start
-        results = "{},{},{} \n".format(total_time,pop,m)
-        print("the final running time is {}".format(end - start))
-        print("the parameters are {} and {}".format(pop, m))
-        fd = open('parameters.csv', 'a')
-        fd.write(results)
-        fd.close()
+
+        if first.success:
+            results = "{},{},{} \n".format(total_time, pop, m)
+            print("the final running time is {}".format(end - start))
+            print("the parameters are {} and {}".format(pop, m))
+            fd = open('parameters.csv', 'a')
+            fd.write(results)
+            fd.close()
+        else:
+            print "fail"
 
