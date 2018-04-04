@@ -34,26 +34,80 @@ def check_and_write(array, filename, NUM_ENTRIES):
         f.root.data.append(array)
         f.close()
         return True
+
+def check_and_print(filename,NUM_ENTRIES):
+    array = []
+    i =0
+    count = 0
+    f = tables.open_file(filename, mode='r')
+    for item in f.root.data:
+
+        c = np.array((f.root.data[i:i + NUM_ENTRIES, 0:]))
+        if len(c) == 0:
+            break
+        i = i + NUM_ENTRIES
+        array.append(c)
+
+    f.close()
+    return array
 if __name__ == "__main__":
+    def create_sols2():
+        C1 = np.array([[1], [0], [0], [0],
+                       [0], [1], [0], [0],
+                       [0], [0], [0], [0],
+                       [0], [0], [0], [0]])
 
-    filename = 'outarray.h5'
-    NUM_ENTRIES = 7
-    x = np.array([[-1, -1, 1, 0, 0, 0, 1],[1, 1, -1, -1, 0, 0, 0], [1, -1, 1, 0, 0, -1, 1],
-                  [-1, 1, 1, 1, -1, 0, 0],
-                  [-1, 0, 1, 1, 0, 0, -1],
-                  [0, 1, 1, 1, 0, 0, -1],
-                  [0, 0, 0, 0, 0, 1, 1],
-                  [0, -1, -1, 0, 1, 0, 1]])
-    x = x.T
-    print x
-    y = np.array([[-1, -1, 1, 0, 0, 0, 1], [1, 1, -1, -1, 0, 0, 0], [1, -1, 1, 0, 0, -1, 1],
-                  [-1, 1, 1, 1, -1, 0, 0],
-                  [-1, 0, 1, 1, 0, 0, -1],
-                  [0, 1, 1, 1, 0, 0, -1],
-                  [0, 0, 0, 0, 0, 1, 1],
-                  [0, -1, -1, 0, 1, 0, 1]])
-    y = y.T
-    print y
+        C2 = np.array([[0], [0], [1], [0],
+                       [0], [0], [0], [1],
+                       [0], [0], [0], [0],
+                       [0], [0], [0], [0]])
 
-    check_and_write(x, 'newfile.h5',7)
-    check_and_write(y, 'newfile.h5',7)
+        C3 = np.array([[0], [0], [0], [0],
+                       [0], [0], [0], [0],
+                       [1], [0], [0], [0],
+                       [0], [1], [0], [0]])
+
+        C4 = np.array([[0], [0], [0], [0],
+                       [0], [0], [0], [0],
+                       [0], [0], [1], [0],
+                       [0], [0], [0], [1]])
+
+        final_sol = np.concatenate((C1, C2, C3, C4), axis=1)
+        return final_sol
+
+    def expand(D, mult, value):
+        rows = D ** 3
+        cols = mult
+        final_value = []
+        for i in range(rows / 2):
+            for z in range(rows / 2, rows):
+                temp = []
+                for j in range(cols):
+                    temp.append(value[i][j] * value[z][j])
+                final_value.append(temp)
+        return np.array(final_value)
+
+
+    def determine_fitness(value, solution):
+        # solution = create_sols2()
+        a = np.dot(value, value.T)
+        b = np.linalg.pinv(a)
+        c = np.dot(value.T, b)
+        d = np.dot(value.T, solution)
+        e = np.dot(c.T, d)
+        f = np.subtract(e, solution)
+        g = np.dot(f, f.T)
+        h = np.trace(g)
+        return 1 / (1 + h), d
+    count = 0
+    final_sol = create_sols2()
+    filename = '2by2.h5'
+    array = check_and_print(filename,7)
+    for item in array:
+        count += 1
+        print item
+        temp = expand(2,7,item.T)
+        print temp
+        a, b = determine_fitness(temp,final_sol)
+        print a
+        print count

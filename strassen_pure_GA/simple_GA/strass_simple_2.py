@@ -542,22 +542,26 @@ class strassen_search():
 
 
 if __name__ == "__main__":
+    start = time.time()
     while(True):
         pop = 40 #np.random.randint(10, 21)
         m =  14 #np.random.randint(35, 45)
-        start = time.time()
+
         first = strassen_search(pop,2,7,m)
         first.simple_search()
-        end =time.time()
-        total_time = end - start
+
+
 
         if first.success:
+            end = time.time()
+            total_time = end - start
             results = "{},{},{} \n".format(total_time, pop, m)
             print("the final running time is {}".format(end - start))
             print("the parameters are {} and {}".format(pop, m))
             fd = open('parameters.csv', 'a')
             fd.write(results)
             fd.close()
+            start = time.time()
         else:
             print "fail"
 
